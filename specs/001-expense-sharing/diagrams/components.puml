@@ -1,0 +1,38 @@
+@startuml
+title SplitSmart Logical Components
+
+actor "Group Member" as Member
+
+component "Web Customer Product\n(client technology TBD)" as Web
+component "Java Swing MVP\n(separate prototype)" as Swing
+component "Application Operations\n(integration contract TBD)" as App
+component "Domain Rules\n(expenses, approvals, balances)" as Domain
+database "Persistent Records\n(storage technology TBD)" as Store
+component "Notifications\n(channel TBD)" as Notify
+component "Reports" as Reports
+
+Member --> Web
+Member --> Swing
+Web --> App : user actions
+Swing --> App : user actions
+App --> Domain : execute rules
+Domain --> Store : read/write domain records
+App --> Notify : expense created
+App --> Reports : requested summaries
+Reports --> Store : authorized records
+
+note right of Web
+Required customer product.
+Must not be replaced by Swing.
+end note
+
+note right of Swing
+Desktop MVP prototype only;
+not customer-platform compliant.
+end note
+
+note bottom of App
+Service deployment and client protocol
+are not specified by the source documents.
+end note
+@enduml

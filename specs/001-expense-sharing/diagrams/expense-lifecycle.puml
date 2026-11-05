@@ -1,0 +1,41 @@
+@startuml
+title Expense Submission, Approval, and Balance Effect
+
+|Group Member|
+start
+:Enter expense, payer, participants,\nsplit method and optional receipt;
+
+|Domain Rules|
+:Validate positive amount and currency scale;
+:Validate percentage total and allocate\nminor-unit remainders deterministically;
+if (Input valid?) then (yes)
+  :Create Pending expense;
+  fork
+    |Notifications|
+    :Notify other group members\nof expense creation;
+  fork again
+    |Approver|
+    :Review expense under group policy;
+  end fork
+  if (Decision is rejection?) then (yes)
+    |Domain Rules|
+    :Mark Rejected;
+    :Leave balances unchanged;
+  else (no)
+    if (All required approvals complete?) then (yes)
+      |Domain Rules|
+      :Mark Approved;
+      :Apply payer credit and participant shares;
+      :Recompute pairwise balances;
+    else (pending)
+      |Domain Rules|
+      :Keep Pending;
+      :Leave balances unchanged;
+    endif
+  endif
+else (no)
+  |Group Member|
+  :Show validation error;\nDo not submit expense;
+endif
+stop
+@enduml

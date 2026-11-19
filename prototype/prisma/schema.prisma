@@ -12,3 +12,127 @@ model EnvironmentCheck {
   message   String
   createdAt DateTime @default(now())
 }
+
+model User {
+  id               String         @id @default(cuid())
+  name             String
+  email            String         @unique
+  avatarColor      String         @default("#315c4d")
+  createdAt        DateTime       @default(now())
+  memberships      Membership[]
+  createdExpenses  Expense[]      @relation("ExpenseCreator")
+  paidExpenses     Expense[]      @relation("ExpensePayer")
+  shares           ExpenseShare[]
+  approvals        Approval[]
+  paymentsSent     Payment[]      @relation("PaymentSender")
+  paymentsReceived Payment[]      @relation("PaymentRecipient")
+  paymentsRecorded Payment[]      @relation("PaymentRecorder")
+  notifications    Notification[]
+}
+
+model Group {
+  id            String         @id @default(cuid())
+  name          String
+  emoji         String         @default("🏡")
+  accentColor   String         @default("#e89a70")
+  createdAt     DateTime       @default(now())
+  memberships   Membership[]
+  expenses      Expense[]
+  payments      Payment[]
+  notifications Notification[]
+}
+
+model Membership {
+  id        String   @id @default(cuid())
+  groupId   String
+  userId    String
+  role      String   @default("MEMBER")
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId])
+  @@index([userId, active])
+}
+
+model Expense {
+  id            String         @id @default(cuid())
+  groupId       String
+  creatorId     String
+  payerId       String
+  description   String
+  amountCents   Int
+  date          DateTime
+  splitType     String
+  status        String         @default("PENDING")
+  createdAt     DateTime       @default(now())
+  group         Group          @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  creator       User           @relation("ExpenseCreator", fields: [creatorId], references: [id])
+  payer         User           @relation("ExpensePayer", fields: [payerId], references: [id])
+  shares        ExpenseShare[]
+  approvals     Approval[]
+  notifications Notification[]
+
+  @@index([groupId, date])
+  @@index([groupId, status])
+}
+
+model ExpenseShare {
+  id               String  @id @default(cuid())
+  expenseId        String
+  userId           String
+  amountCents      Int
+  percentageBps    Int?
+  participantOrder Int
+  expense          Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  user             User    @relation(fields: [userId], references: [id])
+
+  @@unique([expenseId, userId])
+  @@index([userId])
+}
+
+model Approval {
+  id         String   @id @default(cuid())
+  expenseId  String
+  approverId String
+  decision   String
+  note       String?
+  createdAt  DateTime @default(now())
+  expense    Expense  @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  approver   User     @relation(fields: [approverId], references: [id])
+
+  @@unique([expenseId, approverId])
+}
+
+model Payment {
+  id          String   @id @default(cuid())
+  groupId     String
+  senderId    String
+  recipientId String
+  recorderId  String
+  amountCents Int
+  date        DateTime
+  note        String?
+  createdAt   DateTime @default(now())
+  group       Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  sender      User     @relation("PaymentSender", fields: [senderId], references: [id])
+  recipient   User     @relation("PaymentRecipient", fields: [recipientId], references: [id])
+  recorder    User     @relation("PaymentRecorder", fields: [recorderId], references: [id])
+
+  @@index([groupId, date])
+}
+
+model Notification {
+  id          String   @id @default(cuid())
+  groupId     String
+  expenseId   String
+  recipientId String
+  read        Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  group       Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  expense     Expense  @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  recipient   User     @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@index([recipientId, read, createdAt])
+}

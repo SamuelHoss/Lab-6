@@ -1,36 +1,45 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SplitSmart prototype
 
-## Getting Started
+A responsive Next.js demo for creating expense groups, adding members, recording
+equal-split expenses, viewing expense history, and calculating zero-sum member
+balances. SQLite stores amounts as integer cents; Prisma is used only in server
+components, route handlers, and the seed script.
 
-First, run the development server:
+## Run locally
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+From this directory, provide a SQLite URL in `DATABASE_URL` (or in an ignored
+`.env` file). If you don’t already have a `.env`, you can start with
+`.env.example`:
+
+```env
+DATABASE_URL="file:./dev.db"
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Then initialize and seed the local database:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+cp -n .env.example .env
+npm run db:migrate
+npm run db:seed
+npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Open [http://localhost:3000](http://localhost:3000). `db:seed` is safe to run
+again: it upserts the named demo records and does not clear the database. Keep
+your existing `DATABASE_URL`; migration and seed commands do not reset or
+delete the database. The normal Prisma migration workflow is available through
+`npm run db:migrate`.
 
-## Learn More
+This prototype has no authentication or payment processing. A member’s email is
+an optional contact label only. Every saved expense is applied to balances
+immediately. Equal-split remainder cents go to participants in the displayed
+order. Invalid amounts, duplicate members, and participants outside the group
+are rejected with an explanation.
 
-To learn more about Next.js, take a look at the following resources:
+Run the available quality checks with:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npm run lint
+npm test
+npm run build
+```
